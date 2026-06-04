@@ -30,6 +30,13 @@ interface LocalRequestGate {
   queue: Array<() => void>;
 }
 
+const AZURE_OPENAI_HOST_SUFFIXES = [
+  ".openai.azure.com",
+  ".cognitiveservices.azure.com",
+  ".services.ai.azure.com"
+];
+const COMPLETION_TOKEN_MODEL_PATTERN = /^(gpt-5|o1|o3|o4)/i;
+
 const localRequestGates = new Map<string, LocalRequestGate>();
 
 function buildChatCompletionsUrl(baseUrl: string): URL {
@@ -99,6 +106,34 @@ function releaseLocalRequestSlot(key: string, gate: LocalRequestGate): void {
   }
 }
 
+function isAzureOpenAIHost(baseUrl: string): boolean {
+  const hostname = new URL(baseUrl).hostname.toLowerCase();
+
+  return AZURE_OPENAI_HOST_SUFFIXES.some((suffix) =>
+    hostname.endsWith(suffix)
+  );
+}
+
+function usesCompletionTokenLimit(baseUrl: string, model: string): boolean {
+  return (
+    isAzureOpenAIHost(baseUrl) && COMPLETION_TOKEN_MODEL_PATTERN.test(model)
+  );
+}
+
+function buildTokenLimitParams(
+  baseUrl: string,
+  model: string,
+  maxTokens: number | undefined
+): Record<string, number> {
+  if (!maxTokens) {
+    return {};
+  }
+
+  return usesCompletionTokenLimit(baseUrl, model)
+    ? { max_completion_tokens: maxTokens }
+    : { max_tokens: maxTokens };
+}
+
 export async function chatCompletion({
   baseUrl,
   apiKey,
@@ -131,7 +166,7 @@ export async function chatCompletion({
         model,
         messages,
         temperature: temperature ?? 0,
-        ...(maxTokens ? { max_tokens: maxTokens } : {})
+        ...buildTokenLimitParams(baseUrl, model, maxTokens)
       }),
       signal: controller.signal
     });

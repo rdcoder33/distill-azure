@@ -142,6 +142,147 @@ describe("chatCompletion", () => {
       })
     ).rejects.toThrow("Provider returned an empty response.");
   });
+
+  it("keeps max_tokens for legacy models on non-Azure hosts", async () => {
+    let requestBody: Record<string, unknown> = {};
+
+    await chatCompletion({
+      baseUrl: "https://api.openai.com/v1",
+      apiKey: "not-needed",
+      model: "gpt-4o-mini",
+      prompt: "hi",
+      timeoutMs: 100,
+      maxTokens: 123,
+      fetchImpl: async (_, init) => {
+        requestBody = JSON.parse(String(init?.body ?? "{}"));
+
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "ok" } }]
+          }),
+          { status: 200 }
+        );
+      }
+    });
+
+    expect(requestBody.max_tokens).toBe(123);
+    expect(requestBody).not.toHaveProperty("max_completion_tokens");
+  });
+
+  it("keeps max_tokens for legacy models on Azure-compatible hosts", async () => {
+    let requestBody: Record<string, unknown> = {};
+
+    await chatCompletion({
+      baseUrl: "https://example.openai.azure.com/openai/v1",
+      apiKey: "not-needed",
+      model: "gpt-4o-mini",
+      prompt: "hi",
+      timeoutMs: 100,
+      maxTokens: 123,
+      fetchImpl: async (_, init) => {
+        requestBody = JSON.parse(String(init?.body ?? "{}"));
+
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "ok" } }]
+          }),
+          { status: 200 }
+        );
+      }
+    });
+
+    expect(requestBody.max_tokens).toBe(123);
+    expect(requestBody).not.toHaveProperty("max_completion_tokens");
+  });
+
+  it("uses max_completion_tokens for Azure GPT-5 deployments", async () => {
+    let requestBody: Record<string, unknown> = {};
+
+    await chatCompletion({
+      baseUrl: "https://example.openai.azure.com/openai/v1",
+      apiKey: "not-needed",
+      model: "gpt-5.4-nano",
+      prompt: "hi",
+      timeoutMs: 100,
+      maxTokens: 123,
+      fetchImpl: async (_, init) => {
+        requestBody = JSON.parse(String(init?.body ?? "{}"));
+
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "ok" } }]
+          }),
+          { status: 200 }
+        );
+      }
+    });
+
+    expect(requestBody.max_completion_tokens).toBe(123);
+    expect(requestBody).not.toHaveProperty("max_tokens");
+  });
+
+  it("uses max_completion_tokens for Azure o-series deployments", async () => {
+    for (const model of ["o1-mini", "o3", "o4-preview"]) {
+      let requestBody: Record<string, unknown> = {};
+
+      await chatCompletion({
+        baseUrl: "https://example.services.ai.azure.com/models/openai/v1",
+        apiKey: "not-needed",
+        model,
+        prompt: "hi",
+        timeoutMs: 100,
+        maxTokens: 123,
+        fetchImpl: async (_, init) => {
+          requestBody = JSON.parse(String(init?.body ?? "{}"));
+
+          return new Response(
+            JSON.stringify({
+              choices: [{ message: { content: "ok" } }]
+            }),
+            { status: 200 }
+          );
+        }
+      });
+
+      expect(requestBody.max_completion_tokens).toBe(123);
+      expect(requestBody).not.toHaveProperty("max_tokens");
+    }
+  });
+
+  it("passes fake Azure GPT-5 providers that reject max_tokens", async () => {
+    const output = await chatCompletion({
+      baseUrl: "https://example.cognitiveservices.azure.com/openai/v1",
+      apiKey: "not-needed",
+      model: "gpt-5.4-nano",
+      prompt: "hi",
+      timeoutMs: 100,
+      maxTokens: 123,
+      fetchImpl: async (_, init) => {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+
+        if ("max_tokens" in body) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                message:
+                  "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead."
+              }
+            }),
+            { status: 400 }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "PASS" } }]
+          }),
+          { status: 200 }
+        );
+      }
+    });
+
+    expect(output).toBe("PASS");
+  });
 });
 
 describe("summarizeBatch", () => {
