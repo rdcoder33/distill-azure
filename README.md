@@ -132,28 +132,29 @@ We also teach your LLM to talk and think a more efficient way.
 
 ![Distill Language](https://github.com/samuelfaj/distill/blob/main/examples/distill-language.png?raw=true)
 
-### Prefix legend
+### Label legend
 
-When `/distill` is active, responses may use fixed one-letter prefixes:
+When `/distill` is active, responses use readable labels instead of one-letter
+prefixes:
 
 ```text
-S = state/status
-C = context/cause
-D = decision/action
-R = risk/blocker
-O = outcome/output
-N = no-go/constraint
-P = proof/pass criteria
+Status: current state
+Context: why this matters
+Action: what will happen or what happened
+Risk: blocker or failure mode
+Outcome: result
+Constraint: no-go or limit
+Proof: verification or pass criteria
 ```
 
 Example:
 
 ```text
-S tests running
-C Azure GPT-5 rejects max_tokens
-D patch request body
-R wrong host suffix may miss detection
-O tests pass
-N no API keys in docs
-P npm run test PASS
+Status: tests running
+Context: Azure GPT-5 rejects max_tokens
+Action: patch request body
+Risk: wrong host suffix may miss detection
+Outcome: tests pass
+Constraint: no API keys in docs
+Proof: npm run test PASS
 ```

@@ -19,7 +19,7 @@ Talk with the user in distill language:
 - English only, unless user explicitly requests another output language
 - Military English + AR-0/AR-1 baseline
 - short command lines
-- fixed semantic prefixes
+- readable semantic labels
 - semantic atoms over natural phrases
 - one idea per line
 - explicit constraints
@@ -35,21 +35,21 @@ Big wins come from removing repetition, sharing glossary, sharing context, and s
 Default line grammar:
 
 ```text
-<prefix> <semantic-atoms>
+<label>: <semantic-atoms>
 ```
 
 Prefer:
 
 ```text
-S glab auth fail gitlab.com
-D inspect remotes + MR meta
-R merge/update may block w/o token
+Status: glab auth fail gitlab.com
+Action: inspect remotes + MR meta
+Risk: merge/update may block w/o token
 ```
 
 Avoid:
 
 ```text
-Status: glab auth reports fail for gitlab.com. I will still inspect local remotes and MR metadata; merge/update may block if token/session is missing.
+Status: GitLab authentication reports a failure for gitlab.com. I will still inspect local remotes and merge request metadata; merge or update may block if token/session is missing.
 ```
 
 AR levels:
@@ -71,20 +71,20 @@ After `/distill` is invoked:
 
 ## Stable DSL
 
-Always use the shared dict when aliases or prefixes matter.
+Always use the shared dict when aliases matter.
 Emit `Dict:` early in a thread or after changing meanings.
 
-Core prefixes:
+Core labels:
 
-- `S` state/status
-- `C` cause/context
-- `D` action/decision
-- `R` risk/blocker
-- `O` outcome/output
-- `N` constraint/no-go
-- `P` pass criteria/proof
+- `Status:` current state
+- `Context:` why this matters
+- `Action:` what will happen or what happened
+- `Risk:` blocker or failure mode
+- `Outcome:` result
+- `Constraint:` no-go or limit
+- `Proof:` verification or pass criteria
 
-Optional task labels:
+Optional task aliases:
 
 - `A` authentication or authorization
 - `B` backend
@@ -111,25 +111,24 @@ Built-in macros:
 - `9` release or publish flow
 - `0` exact raw output required
 
-Built-in defaults:
+Named defaults:
 
-- `N1` do not change frontend
-- `N2` do not change backend
-- `N3` do not change UI
-- `N4` no broad refactor
-- `N5` preserve unrelated user changes
-- `N6` interactive or TUI command
+- `NoFrontend` do not change frontend
+- `NoBackend` do not change backend
+- `NoUI` do not change UI
+- `NoRefactor` no broad refactor
+- `PreserveUserChanges` preserve unrelated user changes
+- `InteractiveCommand` interactive or TUI command
 
 Example:
 
 ```text
-Dict: S=state C=context D=action R=risk O=outcome N=no-go P=proof
-S auth bug reproduced
-D add failing auth test
-D patch B auth guard
-N F/UI unchanged
-P invalid token denied + valid user allowed
-P bun test auth PASS
+Status: auth bug reproduced
+Action: add failing auth test
+Action: patch B auth guard
+Constraint: F/UI unchanged
+Proof: invalid token denied + valid user allowed
+Proof: bun test auth PASS
 ```
 
 Use DSL only when the user and agent share the glossary. If meaning may be ambiguous, use the full phrase.
@@ -139,30 +138,30 @@ Use DSL only when the user and agent share the glossary. If meaning may be ambig
 Prefer semantic atoms:
 
 ```text
-D sync repo/pkg/bin skill
-R PATH pkg bin may shadow repo
-O minimal patch set
+Action: sync repo/pkg/bin skill
+Risk: PATH pkg bin may shadow repo
+Outcome: minimal patch set
 ```
 
 Avoid natural filler:
 
 ```text
-D patch repo skill + packaged skill + installed skill if needed
-R may need rebuild/install if PATH uses packaged binary
+Action: patch repo skill + packaged skill + installed skill if needed
+Risk: may need rebuild/install if PATH uses packaged binary
 ```
 
 Use arrows for transforms:
 
 ```text
-D migrate labels -> AR-1 cmds
-D verbose status -> S/D/R atoms
+Action: migrate labels -> AR-1 cmds
+Action: verbose status -> readable labels
 ```
 
 Use `=>` for causal/risk relation:
 
 ```text
-C PATH pkg bin => repo patch ignored
-R missing token => merge blocked
+Context: PATH pkg bin => repo patch ignored
+Risk: missing token => merge blocked
 ```
 
 ## Variable Dict
@@ -181,17 +180,17 @@ After defining any `Dict` alias or inline variable, run a substitution pass: eve
 Keep the full term only when exact spelling is required for a model ID, package name, path, URL, quoted text, or disambiguation.
 
 ```text
-S cache=#c1 warmed model=#m1
-D inspect #c1 hit rate
-D compare #m1 latency
-N no extra vars for one-off nouns
+Status: cache=#c1 warmed model=#m1
+Action: inspect #c1 hit rate
+Action: compare #m1 latency
+Constraint: no extra vars for one-off nouns
 ```
 
 After definition, use the variable:
 
 ```text
-D tune #c1 ttl
-D benchmark #m1 output
+Action: tune #c1 ttl
+Action: benchmark #m1 output
 ```
 
 Rules:
@@ -209,38 +208,37 @@ Rules:
 Tiny status:
 
 ```text
-S done
-O changed src/onboarding.ts + test/cli-entry.test.ts
-P bun test PASS
+Status: done
+Outcome: changed src/onboarding.ts + test/cli-entry.test.ts
+Proof: bun test PASS
 ```
 
 Plan:
 
 ```text
-Dict: S=state C=context D=action R=risk O=outcome N=no-go P=proof
-S fix onboarding distill mode
-D inspect skill/rules
-D patch wording + sync copies
-D run focused tests
-N unrelated refactor
-P /distill changes conversation style, not prompt output
-O files + tests + risks
+Status: fix onboarding distill mode
+Action: inspect skill/rules
+Action: patch wording + sync copies
+Action: run focused tests
+Constraint: unrelated refactor
+Proof: /distill changes conversation style, not prompt output
+Outcome: files + tests + risks
 ```
 
 Need info:
 
 ```text
-R need target repo/file
-C prompt lacks safe path
+Risk: need target repo/file
+Context: prompt lacks safe path
 ```
 
 Review/result:
 
 ```text
-O PASS
-O skill activates thread language mode
-P bun test test/cli-entry.test.ts PASS
-R not committed
+Outcome: PASS
+Outcome: skill activates thread language mode
+Proof: bun test test/cli-entry.test.ts PASS
+Risk: not committed
 ```
 
 ## Glossary And Memory
@@ -270,7 +268,7 @@ Use aliases only when they stay obvious:
 When aliases help the user, output one compact line:
 
 ```text
-Dict: S=state C=context D=action R=risk O=outcome N=no-go P=proof B=backend F=frontend
+Dict: B=backend F=frontend
 ```
 
 Later additions:
@@ -285,7 +283,7 @@ Add learned aliases/macros only when likely to repeat.
 Prefer `Dict:` for active shared terms and `Dict+` for additions. Use the shortest unambiguous key possible: first try one letter or one number, then one letter plus one number (`A1`, `B2`) when the one-character key is already taken.
 
 ```text
-Dict: S=state C=context D=action R=risk O=outcome N=no-go P=proof 1=failing-test-first
+Dict: 1=failing-test-first
 Dict+: A1=authentication bug fix
 ```
 

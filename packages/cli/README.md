@@ -94,37 +94,36 @@ Do not commit API keys or real Azure resource names. Keep
 
 After onboarding, use `/distill` in Claude/Codex to make the agent keep talking in distill language for the whole thread. It should adopt the language style, not return your prompt rewritten.
 
-Default response shape uses Military English + AR-0/AR-1 atoms with fixed prefixes:
+Default response shape uses Military English + AR-0/AR-1 atoms with readable labels:
 
 ```text
-Dict: S=state C=context D=action R=risk O=outcome N=no-go P=proof
-S glab auth fail gitlab.com
-D inspect remotes + MR meta
-R merge/update may block w/o token
+Status: glab auth fail gitlab.com
+Action: inspect remotes + MR meta
+Risk: merge/update may block w/o token
 ```
 
-Prefix meanings:
+Label meanings:
 
 ```text
-S = state/status
-C = context/cause
-D = decision/action
-R = risk/blocker
-O = outcome/output
-N = no-go/constraint
-P = proof/pass criteria
+Status: current state
+Context: why this matters
+Action: what will happen or what happened
+Risk: blocker or failure mode
+Outcome: result
+Constraint: no-go or limit
+Proof: verification or pass criteria
 ```
 
 Example:
 
 ```text
-S tests running
-C Azure GPT-5 rejects max_tokens
-D patch request body
-R wrong host suffix may miss detection
-O tests pass
-N no API keys in docs
-P npm run test PASS
+Status: tests running
+Context: Azure GPT-5 rejects max_tokens
+Action: patch request body
+Risk: wrong host suffix may miss detection
+Outcome: tests pass
+Constraint: no API keys in docs
+Proof: npm run test PASS
 ```
 
 Inline variables use dynamic `<term>=#<letter><digit>` assignments chosen by the model from repeated terms. They stay thread-local unless `distill dsl learn-thread --stdin` sees the explicit variable more than 5 times; learned entries are removed when absent from the next learned thread.
