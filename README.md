@@ -131,3 +131,29 @@ rg -n "terminal|PERMISSION|permission|Permissions|Plan|full access|default" desk
 We also teach your LLM to talk and think a more efficient way.
 
 ![Distill Language](https://github.com/samuelfaj/distill/blob/main/examples/distill-language.png?raw=true)
+
+### Prefix legend
+
+When `/distill` is active, responses may use fixed one-letter prefixes:
+
+```text
+S = state/status
+C = context/cause
+D = decision/action
+R = risk/blocker
+O = outcome/output
+N = no-go/constraint
+P = proof/pass criteria
+```
+
+Example:
+
+```text
+S tests running
+C Azure GPT-5 rejects max_tokens
+D patch request body
+R wrong host suffix may miss detection
+O tests pass
+N no API keys in docs
+P npm run test PASS
+```

@@ -103,6 +103,30 @@ D inspect remotes + MR meta
 R merge/update may block w/o token
 ```
 
+Prefix meanings:
+
+```text
+S = state/status
+C = context/cause
+D = decision/action
+R = risk/blocker
+O = outcome/output
+N = no-go/constraint
+P = proof/pass criteria
+```
+
+Example:
+
+```text
+S tests running
+C Azure GPT-5 rejects max_tokens
+D patch request body
+R wrong host suffix may miss detection
+O tests pass
+N no API keys in docs
+P npm run test PASS
+```
+
 Inline variables use dynamic `<term>=#<letter><digit>` assignments chosen by the model from repeated terms. They stay thread-local unless `distill dsl learn-thread --stdin` sees the explicit variable more than 5 times; learned entries are removed when absent from the next learned thread.
 
 `/distill` also has DSL memory:
